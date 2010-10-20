@@ -1,0 +1,22 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Install and uninstall hooks for Workflow extensions module.
+ */
+
+/**
+ * Implementation of hook_install().
+ *
+function workflow_extensions_install() {
+}
+ */
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function workflow_extensions_uninstall() {
+  // Delete all workflow_extensions_* variables at once
+  db_query("DELETE FROM {variable} WHERE name LIKE 'workflow_extensions_%%'");
+}

@@ -1,0 +1,5 @@
+; $Id
+name = Workflow extensions
+description = Replace workflow radio buttons by more intuitive buttons with configurable labels. Send reminder messages when content is in a state for too long.
+core = 6.x
+package = Workflow

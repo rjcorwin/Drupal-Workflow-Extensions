@@ -1,0 +1,271 @@
+<?php
+// $Id$
+
+/**
+ *  @file
+ *  UI-related improvements to the Workflow module and tokens for Rules.
+ *  
+ *  Replaces the traditional workflow radio-buttons by single-action buttons
+ *  featuring context-sensitive labels (using replacement tokens) for a more
+ *  intuitive user experience.
+ *  Also defines some tokens for usage with Rules.
+ *  @See also the discussion on intelligent buttons at drupal.org/node/282122
+ *
+ *  Let's say we have a basic workflow with states "draft", "review" and "live".
+ *  Traditionally authors and moderators must select the next state by pressing
+ *  the correct radio-button and clicking submit. Experience from the field
+ *  suggests that not everybody finds this intuitive. Rather than having to
+ *  think in terms of state transitions, users prefer to press a button with a
+ *  an explanatory label that clearly expresses what is going to happen.
+ *  Using this module authors will find on the edit form a couple of clearly
+ *  labeled buttons: "Save as draft, don't submit" and "Submit for publication".
+ *  In old workflow-speak the latter action is represented by radio buttons plus
+ *  a submit button and read less intuitively as: transition workflow state
+ *  from "draft" to "review".
+ *  Similarly, with this module a moderator will see on their edit form buttons
+ *  like "Reject and return to author John" (i.e. "review -> draft") and
+ *  "Publish this" ("review -> live").
+ *
+ *  The alternative buttons appear on:
+ *  a) the node edit form (node/%/edit)
+ *  b) the comment edit form, if enabled
+ *  c) the workflow tab, if enabled (node/%/workflow)
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function workflow_extensions_menu() {
+  $items = array();
+  $items['admin/settings/workflow_extensions'] = array(
+    'title' => 'Workflow extensions',
+    'description' => 'Configure form submit button labels.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('workflow_extensions_admin_configure'),
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+}
+
+/**
+ * Menu callback for admin settings.
+ */
+function workflow_extensions_admin_configure() {
+  $form['workflow_extensions_buttons'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Configure button labels'),
+    '#description' => t('Define fixed or patterned labels to appear on form submission buttons.')
+  );
+  $form['workflow_extensions_buttons']['workflow_extensions_default_save_button_label'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Label for the button that saves content without changing the workflow state'),
+    '#default_value' => variable_get('workflow_extensions_default_save_button_label', ''),
+    '#description' => t("Examples are <em>Save, but don't change state</em> and <em>Save to drafts</em>. If left blank the label will not be changed from what is defined in the <strong>Workflow</strong> module, i.e. <em>Save</em>.")
+  );
+  $form['workflow_extensions_buttons']['workflow_extensions_change_state_button_label'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Label pattern for buttons that transition workflow state'),
+    '#default_value' => variable_get('workflow_extensions_change_state_button_label', ''),
+    '#description' => t('Text may contain replacement tokens. The default pattern is <em>Move to "[workflow-new-state-name]"</em>. Other useful tokens you may want to use are <em>[workflow-name]</em>, <em>[workflow-current-state-name]</em> and <em>[author-name]</em>. These require the <strong>Token</strong> module to be enabled. Note that your entry applies only to transitions for which no label is already supplied via module <strong>Workflow Named Transitions</strong>, if enabled.')
+  );
+  return system_settings_form($form);
+}
+
+/**
+ * Implementation of hook_form_alter().
+ *
+ * Remove the Workflow radio buttons and replace each state transition by a
+ * submit button with a configurable, explanatory label.
+ *
+ * To allow saving of edits to the node without a state transition, display
+ * an additional button "Save, don't submit" (or similar).
+ */
+function workflow_extensions_form_alter(&$form, &$form_state, $form_id) {
+
+  if (!is_array($form['workflow'])) {
+    // If there's no workflow fieldset on the form, then we have nothing to do.
+    return;
+  }
+  // Current and allowed next states for this user and node live as radio
+  // buttons under $form['workflow'][$workflow_name]['#options].
+  // At the time of writing, the workflow.module (6.x.1-4) contained a bug that
+  // resulted in the $workflow_name being passed as blank. Luckily we can work
+  // around this:
+  if (isset($form['workflow'][''])) {
+    $workflow_radios = $form['workflow'][''];
+  }
+  else {
+    $workflow_name = $form['#wf']->name;
+    if (!isset($workflow_name)) {
+      $workflow_name = $form['workflow']['#title'];
+    }
+    $workflow_radios = $form['workflow'][$workflow_name];
+  }
+
+  if (is_array($workflow_radios)) {
+    // We need a node-context for token replacement. When on the Workflow tab
+    // form, the node object will already have been loaded on the form.
+    // When creating content (node/add/<type>) we only have limited data. In the
+    // remaining cases we load the node from the cache based on the nid found on
+    // the form.
+    if ($form_id == 'workflow_tab_form') {
+      $node = $form['node']['#value'];
+    }
+    else if (is_numeric($nid = $form['nid']['#value'])) {
+      $node = node_load($nid);
+    }
+    else { // Creating new content, nid not yet known
+      $node = $form['#node'];
+    }
+    // Use the form to work out the potential state transitions for this user. 
+    $states = $workflow_radios['#options']; 
+    // $states will be empty when there's only one option, eg when creating node
+    if (count($states) > 1) { 
+      $current_sid = $workflow_radios['#default_value'];
+      $current_state_name = workflow_get_state_name($current_sid);
+      foreach ($states as $sid => $to_state_name) {
+        if ($sid != $current_sid) {
+          // Create button for transition from current_sid to destination state.
+          $button = array();
+          $button['#value'] = workflow_extensions_get_transition_label($form['#wf']->wid, $current_state_name, $to_state_name, $node);
+          $button['#type'] = 'submit';
+          $button['#to_state'] = $sid;
+          if (isset($form['buttons']['submit']['#weight'])) { // node form
+            $button['#weight'] = $form['buttons']['submit']['#weight'] + 1;
+          }
+          elseif (isset($form['submit']['#weight'])) { // comment form
+            $button['#weight'] = $form['submit']['#weight'];
+          }
+          $button['#submit'] = ($form['#id'] == 'node-form') 
+            ? array('workflow_extensions_form_submit', 'node_form_submit')
+            : array_merge(array('workflow_extensions_form_submit'), $form['#submit']);
+          $form['buttons']["submit_to_$to_state_name"] = $button;
+        }
+      }
+      // Get rid of the fieldset containing the workflow radio buttons.
+      unset($form['workflow']);
+      // With the existing Save button now impotent to submit a workflow
+      // transition, we can re-purpose it for saving all other edits to the
+      // node without changing the workflow state.
+      // This does not make sense for the Workflow tab form though, as there is
+      // nothing to save but a state change. In this case we simply remove the
+      // Save button.
+      if ($form_id == 'comment_form') {
+        $form['buttons']['submit'] = $form['submit'];
+        $form['buttons']['submit']['#submit'] = $form['#submit'];
+        $form['buttons']['submit']['#weight']--; // left-most
+      }
+      if ($form_id != 'workflow_tab_form' && ($label = variable_get('workflow_extensions_default_save_button_label', ''))) {
+        $form['buttons']['submit']['#value'] = workflow_extensions_replace_tokens($label, $current_state_name);
+      }
+      unset($form['submit']);
+      unset($form['#submit']);
+    }
+  }
+}
+
+/**
+ * Handler for the submit buttons on the edit form.
+ */
+function workflow_extensions_form_submit($form, &$form_state) {
+  // It is the array form_state['values'] that will be cast to a node object
+  // and saved. This includes form_state['values']['workflow'], so that's the
+  // entry we need to set here in accordance with the clicked button.
+  // See node_form_submit() -> node_form_submbit_build_node() -> node_submit()
+  // Or, for the workflow tab, see workflow_tab_form_submit().
+  $form_state['values']['workflow'] = $form_state['clicked_button']['#to_state'];
+  // ... now proceed to next handler, e.g. node_form_submit for a normal save
+}
+
+/**
+ * Implementation of hook_token_list().
+ * 
+ * Note: [workflow-new-state-name] is in fact a pseudo-token, but the user
+ * doesn't have to know that!
+ */
+function workflow_extensions_token_list($context = 'all') {
+  if (module_exists('workflow') && in_array($context, array('workflow','node','all'))) {
+    $tokens['workflow']['workflow-new-state-name'] = 'New state of content';
+    $tokens['workflow']['workflow-state-age'] = 'Seconds elapsed since last state change';
+  }
+  if ($context == 'node'|| $context == 'all') {
+    $tokens['node']['mod-since-seconds'] = 'Seconds elapsed since last modification';
+  }
+  return $tokens;
+}
+
+/**
+ * Implementation of hook_token_values().
+ * 
+ * Returning [workflow-state-age] for both node and workflow contexts as there
+ * seems to be an issue with using Workflow state as the data type argument in
+ * a Rule set. Such a Rule set won't show as available in a scheduled triggered 
+ * rule. The Content (ie node) data type must be used instead.
+ */
+function workflow_extensions_token_values($context, $object = NULL) {
+  $values = array();
+  switch ($context) {
+    case 'node':
+    case 'workflow':
+      $node = (object)$object;
+      if (module_exists('workflow')) {
+        $stamp = db_result(db_query_range("SELECT stamp FROM {workflow_node_history} WHERE nid = %d ORDER BY stamp DESC", $node->nid, 0, 1));
+        $values['workflow-state-age'] = $stamp ? (time() - $stamp) : 0;
+      }
+      $values['mod-since-seconds'] = $node->changed ? (time() - $node->changed) : 0;
+      break;
+  }
+  return $values;
+}
+
+/**
+ * Return the name for the workflow transition identified by the supplied
+ * from-state and to-state names.
+ *
+ * @param int $wid, workflow identifier, maybe NULL (but then the combination
+ *  of $from_state_name and $to_state_name must be unique across all workflows)
+ * @param string $from_state_name
+ * @param string $to_state_name
+ * @param object $node, context for token replacement; if omitted an attempt
+ *   will be made to load the node based on the nid in the URL. This will fail
+ *   when creating new content, in which case a partial node must be supplied.
+ */
+function workflow_extensions_get_transition_label($wid, $from_state_name, $to_state_name, $node = NULL) {
+  if (module_exists('workflow_named_transitions')) {
+    $transitions = workflow_named_transitions_get_transitions($wid);
+    foreach ($transitions as $transition) {
+      if ($transition['from_state'] == $from_state_name && $transition['to_state'] == $to_state_name) {
+        return workflow_extensions_replace_tokens($transition['label'], $to_state_name, $node);
+      }
+    }
+    // No label defined, fall through as if module 'workflow_named_transitions'
+    // wasn't installed
+  }
+  $tokenized_label = check_markup(variable_get('workflow_extensions_change_state_button_label', ''), FILTER_FORMAT_DEFAULT);
+  return workflow_extensions_replace_tokens($tokenized_label, $to_state_name, $node);
+}
+
+function workflow_extensions_replace_tokens($tokenized_label, $to_state_name = NULL, $node = NULL) {
+  if (empty($tokenized_label)) {
+    return t('Move to "@state_name"', array('@state_name' => $to_state_name));
+  }
+  if (module_exists('token')) {
+    global $user;
+    $objects['global'] = NULL;
+    $objects['user'] = $user;
+    if ($node == NULL && arg(0) == 'node' && is_numeric(arg(1))) {
+      $node = node_load(arg(1)); // node/%
+    }
+    $objects['node'] = $objects['workflow'] = $node;
+    $label = token_replace_multiple($tokenized_label, $objects);
+  }
+  else {
+    $label = $tokenized_label;
+  }
+  if (!empty($to_state_name)) {
+    // Once the real tokens have been replaced, replace the pseudo-token
+    // [workflow-new-state-name]
+    $label = str_replace('[workflow-new-state-name]', $to_state_name, $label);
+  }
+  return $label;
+}
