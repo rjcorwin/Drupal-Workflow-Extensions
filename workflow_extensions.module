@@ -5,12 +5,14 @@
  *  @file
  *  UI-related improvements to the Workflow module and tokens for Rules.
  *  
- *  Replaces the traditional workflow radio-buttons by single-action buttons
+ *  1) Replaces the traditional workflow radio-buttons by single-action buttons
  *  featuring context-sensitive labels (using replacement tokens) for a more
  *  intuitive user experience.
- *  Also defines some tokens for usage with Rules.
  *  @See also the discussion on intelligent buttons at drupal.org/node/282122
+ *  2) The module also defines tokens which when used with Rules allow you to 
+ *  invoke actions when something did NOT happen for some time.
  *
+ *  Re 1)
  *  Let's say we have a basic workflow with states "draft", "review" and "live".
  *  Traditionally authors and moderators must select the next state by pressing
  *  the correct radio-button and clicking submit. Experience from the field
@@ -25,11 +27,20 @@
  *  Similarly, with this module a moderator will see on their edit form buttons
  *  like "Reject and return to author John" (i.e. "review -> draft") and
  *  "Publish this" ("review -> live").
- *
  *  The alternative buttons appear on:
  *  a) the node edit form (node/%/edit)
  *  b) the comment edit form, if enabled
  *  c) the workflow tab, if enabled (node/%/workflow)
+ *
+ *  Re 2) 
+ *  This module defines replacement tokens [node:mod-since-seconds] and
+ *  [node:workflow-state-age], which when used in a scheduled rule set, allow
+ *  you to invoke actions when content was NOT updated or a workflow state NOT
+ *  changed after a specified elapsed time.
+ *  See http://drupal.org/project/workflow_extensions for full instructions on
+ *  how to do this using Rules.
+ *  Note: Workflow is not required if you're after [node-mod-since-seconds]
+ *  token.
  */
 
 /**
@@ -111,7 +122,7 @@ function workflow_extensions_form_alter(&$form, &$form_state, $form_id) {
     if ($form_id == 'workflow_tab_form') {
       $node = $form['node']['#value'];
     }
-    else if (is_numeric($nid = $form['nid']['#value'])) {
+    elseif (is_numeric($nid = $form['nid']['#value'])) {
       $node = node_load($nid);
     }
     else { // Creating new content, nid not yet known
@@ -184,7 +195,7 @@ function workflow_extensions_form_submit($form, &$form_state) {
  * doesn't have to know that!
  */
 function workflow_extensions_token_list($context = 'all') {
-  if (module_exists('workflow') && in_array($context, array('workflow','node','all'))) {
+  if (module_exists('workflow') && in_array($context, array('workflow', 'node', 'all'))) {
     $tokens['workflow']['workflow-new-state-name'] = 'New state of content';
     $tokens['workflow']['workflow-state-age'] = 'Seconds elapsed since last state change';
   }

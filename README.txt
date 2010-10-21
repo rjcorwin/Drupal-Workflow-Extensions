@@ -2,20 +2,22 @@ $Id$
 
 DESCRIPTION
 ===========
-This module replaces the traditional workflow radio-buttons by single-action 
-buttons featuring context-sensitive labels (using replacement tokens) for a more
-intuitive user experience.
-It also defines some tokens that when used with Rules allow you to take action
-when content has NOT been changed or has not transitioned state within a 
-specified elapsed time.
+When using Workflow and/or Rules this module comes in handy to help you realise
+some common use case scenarios and to spruce up your Workflow interface.
+As far as the UI goes this module replaces the traditional workflow radio
+buttons by single-action buttons featuring context-sensitive labels, using 
+replacement tokens, if desired, for a more intuitive user experience.
+It also defines some extra tokens that may be used with Rules to invoke actions,
+like sending reminder emails, when content was NOT updated or a workflow did NOT
+transition state for some time.
 
 Let's say we have a basic workflow with states "draft", "review" and "live".
 Traditionally authors and moderators must select the next state by pressing
 the correct radio-button and clicking submit. Experience from the field
-suggests that not everybody finds this intuitive. Rather than having to
-think in terms of state transitions, users prefer to press a button with a
-an explanatory label that clearly expresses what is going to happen.
-Using this module authors will find on the edit form clearly labeled buttons,
+suggests that not everybody finds this intuitive. Rather than having to think
+in terms of state transitions, users prefer to press a button with a an 
+explanatory label that clearly expresses what is going to happen.
+Using this module authors will find on their edit forms clearly labeled buttons,
 for instance "Save as draft, don't submit" and "Submit for publication".
 In old workflow-speak "Submit for publication" was represented by radio buttons
 plus a submit button which would read less intuitively as: transition workflow
@@ -23,6 +25,15 @@ state from "draft" to "review".
 Similarly, with this module moderators will see on their edit form buttons
 like "Reject and return to author John" (i.e. "review -> draft") and "Publish
 this" or "Go live with this!" ("review -> live").
+
+ This module also defines replacement tokens [node:mod-since-seconds] and
+ [node:workflow-state-age], which when used in a scheduled rule set, allow you
+ to invoke actions when content was NOT updated or a workflow state NOT
+ transitioned after a specified elapsed time.
+ See http://drupal.org/project/workflow_extensions for full instructions on how
+ to do this using Rules.
+ Note: Workflow is not required if you're only after [node-mod-since-seconds]
+ token.
 
 INSTALLATION
 ============
@@ -38,9 +49,9 @@ CONFIGURATION
 =============
 If you have Workflow Named Transitions installed (highly recommended for full
 flexibility), visit Administer >> Site building >> Workflow and click the 
-"Edit labels" tab to enter custom labels. 
-With the Token module installed you may use replacement tokens in your labels, 
-for instance:
+"Edit labels" tab to enter your custom labels. 
+With the Token module installed you may use replacement tokens in your custom
+labels, for instance:
   "Reject submission, return to [author-name]" or 
   "Transition to [workflow]:[workflow-new-state-name]"
 
