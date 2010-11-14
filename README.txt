@@ -5,11 +5,11 @@ DESCRIPTION
 When using Workflow and/or Rules this module comes in handy to help you realise
 some common use case scenarios and to spruce up your Workflow interface.
 As far as the UI goes this module replaces the traditional workflow radio
-buttons by single-action buttons featuring context-sensitive labels, using 
+buttons by single-action buttons featuring context-sensitive labels, using
 replacement tokens, if desired, for a more intuitive user experience.
 It also defines some extra tokens that may be used with Rules to invoke actions,
 like sending reminder emails, when content was NOT updated or a workflow did NOT
-transition state for some time.
+transition state for some time. Using the tokens you won't need PHP snippets.
 
 Let's say we have a basic workflow with states "draft", "review" and "live".
 Traditionally authors and moderators must select the next state by pressing
@@ -26,14 +26,12 @@ Similarly, with this module moderators will see on their edit form buttons
 like "Reject and return to author John" (i.e. "review -> draft") and "Publish
 this" or "Go live with this!" ("review -> live").
 
- This module also defines replacement tokens [node:mod-since-seconds] and
- [node:workflow-state-age], which when used in a scheduled rule set, allow you
- to invoke actions when content was NOT updated or a workflow state NOT
- transitioned after a specified elapsed time.
- See http://drupal.org/project/workflow_extensions for full instructions on how
- to do this using Rules.
- Note: Workflow is not required if you're only after [node-mod-since-seconds]
- token.
+This module also defines a replacement token [node:workflow-state-age], which
+when used in a scheduled rule set, makes it easier to invoke actions when
+a workflow state NOT transitioned after a specified elapsed time. No PHP code
+is required when using this token.
+See drupal.org/project/workflow_extensions for full instructions on how
+to do this using Rules.
 
 INSTALLATION
 ============

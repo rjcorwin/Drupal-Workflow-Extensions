@@ -10,7 +10,7 @@
  *  intuitive user experience.
  *  @See also the discussion on intelligent buttons at drupal.org/node/282122
  *  2) The module also defines tokens which when used with Rules allow you to 
- *  invoke actions when something did NOT happen for some time.
+ *  more easily invoke actions when something did NOT happen for some time.
  *
  *  Re 1)
  *  Let's say we have a basic workflow with states "draft", "review" and "live".
@@ -33,14 +33,11 @@
  *  c) the workflow tab, if enabled (node/%/workflow)
  *
  *  Re 2) 
- *  This module defines replacement tokens [node:mod-since-seconds] and
- *  [node:workflow-state-age], which when used in a scheduled rule set, allow
- *  you to invoke actions when content was NOT updated or a workflow state NOT
- *  changed after a specified elapsed time.
- *  See http://drupal.org/project/workflow_extensions for full instructions on
+ *  This module defines a replacement token [node:workflow-state-age], which
+ *  when used in a scheduled rule set, make it easier to invoke actions when
+ *  a workflow state was NOT changed after a specified elapsed time.
+ *  See drupal.org/project/workflow_extensions for full instructions on
  *  how to do this using Rules.
- *  Note: Workflow is not required if you're after [node-mod-since-seconds]
- *  token.
  */
 
 /**
@@ -71,14 +68,14 @@ function workflow_extensions_admin_configure() {
     '#type' => 'textfield',
     '#title' => t('Label for the button that saves content without changing the workflow state'),
     '#default_value' => variable_get('workflow_extensions_default_save_button_label', ''),
-    '#description' => t("Examples are <em>Save, but don't change state</em> and <em>Save to drafts</em>. If left blank the label will not be changed from what is defined in the <strong>Workflow</strong> module, i.e. <em>Save</em>.")
+    '#description' => t('Example: <em>Save, don\'t change state</em>. Your text may contain replacement tokens, e.g. <em>Save "[title]" to drafts</em>. Tokens require the <strong>Token</strong> module to be enabled. If left blank, the label will be the <strong>Workflow</strong> module default, i.e. <em>Save</em>.')
   );
   $form['workflow_extensions_buttons']['workflow_extensions_change_state_button_label'] = array(
     '#type' => 'textfield',
     '#title' => t('Label pattern for buttons that transition workflow state'),
     '#default_value' => variable_get('workflow_extensions_change_state_button_label', ''),
-    '#description' => t('Text may contain replacement tokens. The default pattern is <em>Move to "[workflow-new-state-name]"</em>. Other useful tokens you may want to use are <em>[workflow-name]</em>, <em>[workflow-current-state-name]</em> and <em>[author-name]</em>. These require the <strong>Token</strong> module to be enabled. Note that your entry applies only to transitions for which no label is already supplied via module <strong>Workflow Named Transitions</strong>, if enabled.')
-  );
+    '#description' => t('Text may contain replacement tokens. The default pattern is <em>Move to "[workflow-new-state-name]"</em>. Other useful tokens you may want to use are <em>[workflow-name]</em>, <em>[workflow-current-state-name]</em> and <em>[author-name]</em>. Note that your entry applies only to transitions for which no label is already supplied via module <strong>Workflow Named Transitions</strong>, if enabled.')
+    );
   return system_settings_form($form);
 }
 
@@ -93,7 +90,7 @@ function workflow_extensions_admin_configure() {
  */
 function workflow_extensions_form_alter(&$form, &$form_state, $form_id) {
 
-  if (!is_array($form['workflow'])) {
+  if (!isset($form['workflow'])) {
     // If there's no workflow fieldset on the form, then we have nothing to do.
     return;
   }
@@ -117,8 +114,8 @@ function workflow_extensions_form_alter(&$form, &$form_state, $form_id) {
     // We need a node-context for token replacement. When on the Workflow tab
     // form, the node object will already have been loaded on the form.
     // When creating content (node/add/<type>) we only have limited data. In the
-    // remaining cases we load the node from the cache based on the nid found on
-    // the form.
+    // remaining cases we load the node from the cache based on the nid found
+    // on the form.
     if ($form_id == 'workflow_tab_form') {
       $node = $form['node']['#value'];
     }
