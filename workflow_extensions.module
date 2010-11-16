@@ -100,16 +100,15 @@ function workflow_extensions_form_alter(&$form, &$form_state, $form_id) {
   // resulted in the $workflow_name being passed as blank. Luckily we can work
   // around this:
   if (isset($form['workflow'][''])) {
-    $workflow_radios = $form['workflow'][''];
+    $workflow_name = '';
   }
   else {
     $workflow_name = $form['#wf']->name;
     if (!isset($workflow_name)) {
       $workflow_name = $form['workflow']['#title'];
     }
-    $workflow_radios = $form['workflow'][$workflow_name];
   }
-
+  $workflow_radios = $form['workflow'][$workflow_name];
   if (is_array($workflow_radios)) {
     // We need a node-context for token replacement. When on the Workflow tab
     // form, the node object will already have been loaded on the form.
@@ -150,8 +149,13 @@ function workflow_extensions_form_alter(&$form, &$form_state, $form_id) {
           $form['buttons']["submit_to_$to_state_name"] = $button;
         }
       }
-      // Get rid of the fieldset containing the workflow radio buttons.
-      unset($form['workflow']);
+      // Get rid workflow radio buttons that live inside the fieldset
+      unset($form['workflow'][$workflow_name]);
+      // If after this the fieldset is empty, remove it altogher
+      if (!isset($form['workflow']['workflow_scheduled']) &&
+        (!isset($form['workflow']['workflow_comment']) || $form['workflow']['workflow_comment']['#type'] == 'hidden')) {
+        unset($form['workflow']);
+      }
       // With the existing Save button now impotent to submit a workflow
       // transition, we can re-purpose it for saving all other edits to the
       // node without changing the workflow state.
@@ -166,8 +170,8 @@ function workflow_extensions_form_alter(&$form, &$form_state, $form_id) {
       if ($form_id != 'workflow_tab_form' && ($label = variable_get('workflow_extensions_default_save_button_label', ''))) {
         $form['buttons']['submit']['#value'] = workflow_extensions_replace_tokens($label, $current_state_name);
       }
-      unset($form['submit']);
-      unset($form['#submit']);
+      unset($form['submit']);  // the button
+      unset($form['#submit']); // the handler
     }
   }
 }
@@ -249,7 +253,10 @@ function workflow_extensions_get_transition_label($wid, $from_state_name, $to_st
     // No label defined, fall through as if module 'workflow_named_transitions'
     // wasn't installed
   }
-  $tokenized_label = check_markup(variable_get('workflow_extensions_change_state_button_label', ''), FILTER_FORMAT_DEFAULT);
+  $tokenized_label = variable_get('workflow_extensions_change_state_button_label', '');
+  // Don't think we need to check_markup(). Only users with 'administer site 
+  // configuration' permission can set the label pattern, so it's up to them to
+  // use or not use HTML and/or javascript.
   return workflow_extensions_replace_tokens($tokenized_label, $to_state_name, $node);
 }
 
