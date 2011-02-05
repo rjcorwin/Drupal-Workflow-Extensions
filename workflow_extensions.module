@@ -129,7 +129,13 @@ function workflow_extensions_form_alter(&$form, &$form_state, $form_id) {
     // $states will be empty when there's only one option, eg when creating node
     if (count($states) > 1) { 
       $current_sid = $workflow_radios['#default_value'];
-      $current_state_name = workflow_get_state_name($current_sid);
+      if (function_exists('workflow_get_state_name')) {
+        $current_state_name = workflow_get_state_name($current_sid);
+      } 
+      else {
+        $current_state = workflow_get_state($current_sid);
+        $current_state_name = $current_state['state'];
+      }
       foreach ($states as $sid => $to_state_name) {
         if ($sid != $current_sid) {
           // Create button for transition from current_sid to destination state.
