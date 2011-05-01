@@ -7,7 +7,7 @@
  *  1) Replaces the traditional workflow radio-buttons by single-action buttons
  *  featuring context-sensitive labels (using replacement tokens) for a more
  *  intuitive user experience.
- *  @See also the discussion on intelligent buttons at drupal.org/node/282122
+ *  See also the discussion on intelligent buttons at drupal.org/node/282122.
  *  2) The module also defines tokens which when used with Rules allow you to 
  *  more easily invoke actions when something did NOT happen for some time.
  *
@@ -177,7 +177,7 @@ function workflow_extensions_form_submit($form, &$form_state) {
   // See workflow_tab_form_submit() for the Workflow tab.
   $selected_sid = empty($form_state['clicked_button']['#to_state'])
     // I expected drop-down value would to be on $form_state, but it's not 
-    ? $_POST[workflow_extensions_extract_workflow_name($form)]
+    ? check_plain($_POST[workflow_extensions_extract_workflow_name($form)])
     : $form_state['clicked_button']['#to_state'];
   $form_state['values']['workflow'] = $selected_sid;
   // ... now proceed to next handler, e.g. node_form_submit for a normal save
@@ -244,7 +244,7 @@ function _workflow_extensions_replace_with_buttons(&$form, $workflow_name) {
     $form['buttons']['submit']['#weight']--; // left-most
   }
   if ($form_id != 'workflow_tab_form' && ($label = variable_get('workflow_extensions_default_save_button_label', ''))) {
-     $form['buttons']['submit']['#value'] = workflow_extensions_replace_state_name_tokens($label, $current_state_name);
+    $form['buttons']['submit']['#value'] = workflow_extensions_replace_state_name_tokens($label, $current_state_name);
   }
   unset($form['submit']);  // the button
   unset($form['#submit']); // the handler
@@ -276,7 +276,7 @@ function workflow_extensions_block($op = 'list', $delta = 0) {
     $block[0]['info'] = t('Workflow state change form');
     return $block;
   }
-  else if ($op == 'view' && arg(0) == 'node') {
+  elseif ($op == 'view' && arg(0) == 'node') {
     $node = node_load(arg(1));
     $block['content'] = workflow_extensions_change_state_form($node);
     $block['subject'] = '';

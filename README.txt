@@ -58,13 +58,13 @@ In addition, there are a couple of self-explanatory configuration options at
 Administer >> Site configuration >> Workflow extensions and one permission
 at Administer >> User management >> Permissions.
 
-Finally, this module also makes the state change form usec on the Workflow tab
+Finally, this module also makes the state change form used on the Workflow tab
 available as a block, giving you more control over where users may change
 workflow state. A use-case is a trouble-ticket system, whereby operators can
-view the ticket status AND update it on the same page, minimising clicks. 
-Using the block visibility controls you may place the block on any page that 
+view the ticket status AND update it on the same page, minimising clicks.
+Using the block visibility controls you may place the block on any page that
 provides a node context, typically the node/* pages, or more specifically the
-node view page. To prevent the Edit and other tabs from also displaying the 
+node view page. To prevent the Edit and other tabs from also displaying the
 block, enter "*/*/*" under "Show on every page except the listed pages".
 If your theme does not have any block regions to suit your esthetic 
 requirements, you can instead insert the line below in the node.tpl.php file of
