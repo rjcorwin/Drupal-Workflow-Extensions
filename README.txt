@@ -4,11 +4,13 @@ DESCRIPTION
 When using Workflow and/or Rules this module comes in handy to help you realise
 some common use case scenarios and to spruce up your Workflow interface.
 As far as the UI goes this module replaces the traditional workflow radio
-buttons by single-action buttons featuring context-sensitive labels, using
-replacement tokens, if desired, for a more intuitive user experience.
-It also defines some extra tokens that may be used with Rules to invoke actions,
-like sending reminder emails, when content was NOT updated or a workflow did NOT
-transition state for some time. Using the tokens you won't need PHP snippets.
+buttons by either a drop-down or single-action buttons. The latter feature
+context-sensitive labels, potentially employing replacement tokens, if desired,
+for a more intuitive user experience.
+The module also defines some extra tokens that may be used with Rules to invoke
+actions, like sending reminder emails, when content was NOT updated or a 
+workflow did NOT transition state for some time. Using these tokens you won't 
+need PHP snippets.
 
 Let's say we have a basic workflow with states "draft", "review" and "live".
 Traditionally authors and moderators must select the next state by pressing
@@ -46,23 +48,41 @@ CONFIGURATION
 =============
 If you have Workflow Named Transitions installed (highly recommended for full
 flexibility), visit Administer >> Site building >> Workflow and click the 
-"Edit labels" tab to enter your custom labels. 
+"Edit labels" tab at the top of the page to enter your custom labels. 
 With the Token module installed you may use replacement tokens in your custom
 labels, for instance:
   "Reject submission, return to [author-name]" or 
   "Transition to [workflow]:[workflow-new-state-name]"
 
 In addition, there are a couple of self-explanatory configuration options at
-Administer >> Site configuration >> Workflow extensions.
+Administer >> Site configuration >> Workflow extensions and one permission
+at Administer >> User management >> Permissions.
+
+Finally, this module also makes the state change form usec on the Workflow tab
+available as a block, giving you more control over where users may change
+workflow state. A use-case is a trouble-ticket system, whereby operators can
+view the ticket status AND update it on the same page, minimising clicks. 
+Using the block visibility controls you may place the block on any page that 
+provides a node context, typically the node/* pages, or more specifically the
+node view page. To prevent the Edit and other tabs from also displaying the 
+block, enter "*/*/*" under "Show on every page except the listed pages".
+If your theme does not have any block regions to suit your esthetic 
+requirements, you can instead insert the line below in the node.tpl.php file of
+your theme, for instance immediately above (or below) the line containing 
+"print $content;":
+
+  <?php if (!$teaser) print workflow_extensions_change_state_form($node); ?>
 
 USAGE
 =====
 Users will find that the workflow radio buttons previously used to instigate
-state transitions are now replaced by more intuitive single-action buttons
-labeled with the texts you entered above. This applies to the node edit and
-comment forms, as well as the Workflow tab, node/%/workflow, if enabled at
-Administer >> Site building >> Workflow >> edit, section "Workflow tab 
-permissions".
+state transitions are now replaced by either a drop-down selector or by more 
+intuitive single-action buttons, as configured by you at Site configuration >>
+Workflow extensions 
+This applies to the node edit and comment forms, as well as the Workflow tab
+node/%/workflow, if enabled at Administer >> Site building >> Workflow >> edit,
+section "Workflow tab permissions". It also applies to the "Workflow change
+state form" block introduced by this module.
 
 UNINSTALL
 =========

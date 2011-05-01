@@ -1,4 +1,7 @@
+
 name = Workflow extensions
 description = Replace workflow radio buttons by more intuitive buttons with configurable labels. Automatically invoke actions, like emailing reminders, when a workflow has not transitioned state for some time.
 core = 6.x
 package = Workflow
+
+version = 6.x-1.x-dev
