@@ -88,7 +88,7 @@ function workflow_extensions_admin_configure() {
   );
   $form['workflow_extensions_buttons']['workflow_extensions_change_state_form_title'] = array(
     '#type' => 'textfield',
-    '#title' => t('Title to appear above the state change buttons or selector'),
+    '#title' => t('Title to appear above the state change radio buttons or dropdown selector'),
     '#default_value' => variable_get('workflow_extensions_change_state_form_title', ''),
     '#description' => t('Use <em>&lt;none&gt;</em> to have no title. If left blank the title is of the format <em><strong>Change [workflow-name] state:</strong></em>. Your text may contain replacement tokens. Tokens require the <strong>Token</strong> module to be enabled.')
   );
@@ -170,15 +170,16 @@ function workflow_extensions_form_alter(&$form, &$form_state, $form_id) {
  */
 function workflow_extensions_form_submit($form, &$form_state) {
   // In the original form_submit handler that we pass control to next, the 
-  // selected workflow state is taken from form_state['values']['workflow']. So 
+  // selected workflow state is taken from form_state['values']['workflow']. So
   // that's the entry we need to set here in accordance with the clicked button
   // or the selected drop-down value.
   // See node_form_submit() -> node_submit() for the edit form.
   // See workflow_tab_form_submit() for the Workflow tab.
   $selected_sid = empty($form_state['clicked_button']['#to_state'])
-    // I expected drop-down value would to be on $form_state, but it's not 
+    // Expected the selected dropdown value to be on $form_state, but it's not
     ? check_plain($_POST[workflow_extensions_extract_workflow_name($form)])
     : $form_state['clicked_button']['#to_state'];
+//drupal_set_message(print_r($_POST, TRUE), 'warning');
   $form_state['values']['workflow'] = $selected_sid;
   // ... now proceed to next handler, e.g. node_form_submit for a normal save
 }
@@ -255,16 +256,6 @@ function _workflow_extensions_replace_with_dropdown(&$form, $workflow_name) {
   $form['#submit'] = _workflow_extensions_assign_handler($form);
 }
 
-function _workflow_extensions_assign_handler($form) {
-  if (!isset($form['#submit'])) {
-    return NULL;
-  }
-  $original_handlers = $form['#submit']; // e.g. 'workflow_tab_form_submit' or 'menu_node_form_submit'
-  return ($form['#id'] == 'node-form' && variable_get('workflow_extensions_ui_style', WORKFLOW_EXTENSIONS_UI_BUTTONS) == WORKFLOW_EXTENSIONS_UI_BUTTONS)
-    ? array('workflow_extensions_form_submit', 'node_form_submit')
-    : array_merge(array('workflow_extensions_form_submit'), $original_handlers);
-}
-
 /**
  * Implementation of hook_block().
  */
@@ -337,6 +328,16 @@ function workflow_extensions_extract_workflow_name($form) {
     return '';
   }
   return isset($form['#wf']->name) ? $form['#wf']->name : $form['workflow']['#title'];
+}
+
+function _workflow_extensions_assign_handler($form) {
+  if (!isset($form['#submit'])) {
+    return NULL;
+  }
+  $original_handlers = $form['#submit']; // e.g. 'workflow_tab_form_submit' or 'menu_node_form_submit'
+  return ($form['#id'] == 'node-form' && variable_get('workflow_extensions_ui_style', WORKFLOW_EXTENSIONS_UI_BUTTONS) == WORKFLOW_EXTENSIONS_UI_BUTTONS)
+    ? array('workflow_extensions_form_submit', 'node_form_submit')
+    : array_merge(array('workflow_extensions_form_submit'), $original_handlers);
 }
 
 /**
