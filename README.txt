@@ -65,7 +65,10 @@ view the ticket status AND update it on the same page, minimising clicks.
 Using the block visibility controls you may place the block on any page that
 provides a node context, typically the node/* pages, or more specifically the
 node view page. To prevent the Edit and other tabs from also displaying the
-block, enter "*/*/*" under "Show on every page except the listed pages".
+block tick " Show if the following PHP code returns TRUE" and enter:
+
+  <?php return !arg(2); ?>
+
 If your theme does not have any block regions to suit your esthetic 
 requirements, you can instead insert the line below in the node.tpl.php file of
 your theme, for instance immediately above (or below) the line containing 

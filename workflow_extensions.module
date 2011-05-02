@@ -165,8 +165,8 @@ function workflow_extensions_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
- * Handler for the drop-down and single-action submit buttons on the edit form.
- * Does NOT get called when radio buttons are selected.
+ * Handler for the single-action submit buttons on the edit form.
+ * Does NOT get called when radio buttons or drop-down are used.
  */
 function workflow_extensions_form_submit($form, &$form_state) {
   // In the original form_submit handler that we pass control to next, the 
@@ -175,12 +175,7 @@ function workflow_extensions_form_submit($form, &$form_state) {
   // or the selected drop-down value.
   // See node_form_submit() -> node_submit() for the edit form.
   // See workflow_tab_form_submit() for the Workflow tab.
-  $selected_sid = empty($form_state['clicked_button']['#to_state'])
-    // Expected the selected dropdown value to be on $form_state, but it's not
-    ? check_plain($_POST['workflow_state']) // as set in _workflow_extensions_replace_with_dropdown()
-    : $form_state['clicked_button']['#to_state'];
-
-  $form_state['values']['workflow'] = $selected_sid;
+  $form_state['values']['workflow'] = $form_state['clicked_button']['#to_state'];
   // ... now proceed to next handler, e.g. node_form_submit for a normal save
 }
 
@@ -253,8 +248,7 @@ function _workflow_extensions_replace_with_buttons(&$form, $workflow_name) {
 
 function _workflow_extensions_replace_with_dropdown(&$form, $workflow_name) {
   $form['workflow'][$workflow_name]['#type'] = 'select';
-  $form['workflow'][$workflow_name]['#name'] = 'workflow_state';
-  $form['#submit'] = _workflow_extensions_assign_handler($form);
+  $form['workflow'][$workflow_name]['#name'] = 'workflow';
 }
 
 /**
@@ -336,7 +330,7 @@ function _workflow_extensions_assign_handler($form) {
     return NULL;
   }
   $original_handlers = $form['#submit']; // e.g. 'workflow_tab_form_submit' or 'menu_node_form_submit'
-  return ($form['#id'] == 'node-form' && variable_get('workflow_extensions_ui_style', WORKFLOW_EXTENSIONS_UI_BUTTONS) == WORKFLOW_EXTENSIONS_UI_BUTTONS)
+  return ($form['#id'] == 'node-form')
     ? array('workflow_extensions_form_submit', 'node_form_submit')
     : array_merge(array('workflow_extensions_form_submit'), $original_handlers);
 }
