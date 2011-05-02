@@ -177,9 +177,9 @@ function workflow_extensions_form_submit($form, &$form_state) {
   // See workflow_tab_form_submit() for the Workflow tab.
   $selected_sid = empty($form_state['clicked_button']['#to_state'])
     // Expected the selected dropdown value to be on $form_state, but it's not
-    ? check_plain($_POST[workflow_extensions_extract_workflow_name($form)])
+    ? check_plain($_POST['workflow_state']) // as set in _workflow_extensions_replace_with_dropdown()
     : $form_state['clicked_button']['#to_state'];
-//drupal_set_message(print_r($_POST, TRUE), 'warning');
+
   $form_state['values']['workflow'] = $selected_sid;
   // ... now proceed to next handler, e.g. node_form_submit for a normal save
 }
@@ -253,6 +253,7 @@ function _workflow_extensions_replace_with_buttons(&$form, $workflow_name) {
 
 function _workflow_extensions_replace_with_dropdown(&$form, $workflow_name) {
   $form['workflow'][$workflow_name]['#type'] = 'select';
+  $form['workflow'][$workflow_name]['#name'] = 'workflow_state';
   $form['#submit'] = _workflow_extensions_assign_handler($form);
 }
 

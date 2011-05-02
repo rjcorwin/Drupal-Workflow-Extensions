@@ -9,7 +9,6 @@
  * Implementation of hook_install().
  */
 function workflow_extensions_install() {
-  update_sql("UPDATE {system} SET weight = 1000 WHERE name = 'workflow_extensions'");
 }
 
 /**
@@ -23,11 +22,6 @@ function workflow_extensions_uninstall() {
 /**
  * Implementation of hook_update_N().
  *
- * Place ourselves behind all other modules so that we are the last to alter
- * forms created by Workflow.
- */
 function workflow_extensions_update_6101() {
-  $ret = array();
-  $ret[] = update_sql("UPDATE {system} SET weight = 1000 WHERE name = 'workflow_extensions'");
-  return $ret;
 }
+ */
