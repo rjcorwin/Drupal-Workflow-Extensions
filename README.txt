@@ -6,7 +6,9 @@ some common use case scenarios and to spruce up your Workflow interface.
 As far as the UI goes this module replaces the traditional workflow radio
 buttons by either a drop-down or single-action buttons. The latter feature
 context-sensitive labels, potentially employing replacement tokens, if desired,
-for a more intuitive user experience.
+for a more intuitive user experience. For further flexibility all three UI 
+styles (radio, drop-down or single-action buttons) are available as a block.
+
 The module also defines some extra tokens that may be used with Rules to invoke
 actions, like sending reminder emails, when content was NOT updated or a 
 workflow did NOT transition state for some time. Using these tokens you won't 
@@ -65,7 +67,7 @@ view the ticket status AND update it on the same page, minimising clicks.
 Using the block visibility controls you may place the block on any page that
 provides a node context, typically the node/* pages, or more specifically the
 node view page. To prevent the Edit and other tabs from also displaying the
-block tick " Show if the following PHP code returns TRUE" and enter:
+block tick "Show if the following PHP code returns TRUE" and enter:
 
   <?php return !arg(2); ?>
 

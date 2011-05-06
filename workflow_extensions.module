@@ -3,11 +3,13 @@
 /**
  *  @file
  *  UI-related improvements to the Workflow module and tokens for Rules.
- *  
- *  1) Replaces the traditional workflow radio-buttons by single-action buttons
- *  featuring context-sensitive labels (using replacement tokens) for a more
- *  intuitive user experience.
+ *
+ *  1) Replaces the traditional workflow radio-buttons by either a drop-down or
+ *  single-action buttons featuring context-sensitive labels (using replacement
+ *  tokens) for a more intuitive user experience.
  *  See also the discussion on intelligent buttons at drupal.org/node/282122.
+ *  All three UI styles (radio, dropw-down or single-action) are available as a
+ *  block.
  *  2) The module also defines tokens which when used with Rules allow you to 
  *  more easily invoke actions when something did NOT happen for some time.
  *
@@ -204,6 +206,7 @@ function _workflow_extensions_replace_with_buttons(&$form, $workflow_name) {
     $node = $form['#node'];
   }
   $states = $form['workflow'][$workflow_name]['#options'];
+  $submit_handler = _workflow_extensions_assign_handler($form);
   foreach ($states as $sid => $to_state_name) {
     if ($sid != $current_sid) {
       // Create button for transition from current_sid to destination state.
@@ -217,7 +220,7 @@ function _workflow_extensions_replace_with_buttons(&$form, $workflow_name) {
       elseif (isset($form['submit']['#weight'])) { // comment form
         $button['#weight'] = $form['submit']['#weight'];
       }
-      $button['#submit'] = _workflow_extensions_assign_handler($form);
+      $button['#submit'] = $submit_handler;
       $form['buttons']["submit_to_$to_state_name"] = $button;
     }
   }
