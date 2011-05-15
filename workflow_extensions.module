@@ -188,7 +188,7 @@ function _workflow_extensions_replace_with_buttons(&$form, $workflow_name) {
   }
   else {
     $current_state = workflow_get_state($current_sid);
-    $current_state_name = $current_state['state'];
+    $current_state_name = $current_state->state;
   }
   // We need a node-context for token replacement. When on the Workflow tab
   // form, the node object will already have been loaded on the form.
@@ -279,41 +279,41 @@ function workflow_extensions_change_state_form($node) {
     return '';
   }
 
-  $choices = workflow_field_choices($node);
-  if (count($choices) == 1) {
-    if (user_access('view workflow state change block even when state cannot be changed')) {
-      // Generate single-option form without Submit button 
-      return drupal_get_form('workflow_extensions_single_state_form', workflow_get_name($wid), $choices);
+    $choices = workflow_field_choices($node, $wid);
+    if (count($choices) == 1) {
+      if (user_access('view workflow state change block even when state cannot be changed')) {
+        // Generate single-option form without Submit button 
+        return drupal_get_form('workflow_extensions_single_state_form', workflow_get_name($wid), $choices);
+      }
+      return ''; // not allowed to view state
     }
-    return ''; // not allowed to view state
+  
+    $result = db_query("SELECT sid, name FROM {workflow_states} WHERE status = 1 ORDER BY sid");
+    while ($row = db_fetch_object($result)) {
+      $workflow_states[$row->sid] = check_plain(t($row->state));
+    }
+    $sid_current = workflow_node_current_state($node);
+    require_once drupal_get_path('module', 'workflow') . '/workflow.pages.inc';
+    $output = drupal_get_form('workflow_tab_form', $node, $wid, $workflow_states, $sid_current);
+    return $output;
   }
-
-  $result = db_query("SELECT sid, state FROM {workflow_states} WHERE status = 1 ORDER BY sid");
-  while ($row = db_fetch_object($result)) {
-    $workflow_states[$row->sid] = check_plain(t($row->state));
+  
+  /**
+   * Form used to display the current state, without a submit button to change it.
+   * @param $form_state
+   * @param $workflow_name
+   * @param $current_state, an array of one element, indexed by its sid
+   */
+  function workflow_extensions_single_state_form($form_state, $workflow_name, $current_state) {
+    $sids = array_keys($current_state);
+    $form['workflow']['#title'] = $workflow_name;
+    $form['workflow'][$workflow_name] = array(
+      '#type' => 'radios', // may be overridden by workflow_extensions_form_alter()
+      '#options' => $current_state,
+      '#default_value' => $sids[0]
+    );
+    return $form;
   }
-  $sid_current = workflow_node_current_state($node);
-  require_once drupal_get_path('module', 'workflow') . '/workflow.pages.inc';
-  $output = drupal_get_form('workflow_tab_form', $node, $wid, $workflow_states, $sid_current);
-  return $output;
-}
-
-/**
- * Form used to display the current state, without a submit button to change it.
- * @param $form_state
- * @param $workflow_name
- * @param $current_state, an array of one element, indexed by its sid
- */
-function workflow_extensions_single_state_form($form_state, $workflow_name, $current_state) {
-  $sids = array_keys($current_state);
-  $form['workflow']['#title'] = $workflow_name;
-  $form['workflow'][$workflow_name] = array(
-    '#type' => 'radios', // may be overridden by workflow_extensions_form_alter()
-    '#options' => $current_state,
-    '#default_value' => $sids[0]
-  );
-  return $form;
-}
 
 function workflow_extensions_extract_workflow_name($form) {
   // Current and allowed next states for this user and node live in 
